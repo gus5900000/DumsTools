@@ -2,20 +2,6 @@
 
 DumsTools est une application de bureau polyvalente conçue pour augmenter votre productivité au quotidien. Grâce à ses fonctionnalités de correction de texte, de traduction et de gestion de raccourcis personnalisés, elle vous aide à simplifier votre flux de travail.
 
-![DumsTools Interface](<lien_vers_une_image_de_linterface>) <!-- Remplacez <lien_vers_une_image_de_linterface> par le lien vers une image de votre application -->
-
-## Table des Matières
-
-- [Fonctionnalités](#fonctionnalités)
-- [Prérequis](#prérequis)
-- [Installation](#installation)
-- [Utilisation](#utilisation)
-- [Détails Techniques](#détails-techniques)
-- [Contribution](#contribution)
-- [Support](#support)
-- [FAQ](#faq)
-- [Licence](#licence)
-
 ## Fonctionnalités
 
 - **Correction de texte** : Corrigez les erreurs grammaticales et syntaxiques avec l'API d'OpenAI.
