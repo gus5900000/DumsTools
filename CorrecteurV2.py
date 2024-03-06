@@ -1,15 +1,11 @@
-import sys
+import sys , webbrowser , subprocess , openai
 import os
-import typing
 from PyQt5 import QtGui
 from PyQt5.QtGui import * 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer, QSettings
-from PyQt5.QtWidgets import QWidget
-from googletrans import Translator
-import openai
-import subprocess
-import webbrowser
+from googletrans import *
+
 
 with open('token.txt', 'r') as file:
     api_key = file.read().strip()
@@ -21,7 +17,7 @@ class MainWindow(QMainWindow):
 
         scriptDir = os.path.dirname(os.path.realpath(__file__))
         iconPath = os.path.join(scriptDir, 'resources', 'Logo.png')
-        self.setWindowIcon(QtGui.QIcon(iconPath))
+        self.setWindowIcon(QtGui.QIcon("recources\Logo.png"))
         self.setWindowTitle("DumsTools")
 
         # Dark mode
@@ -35,7 +31,7 @@ class MainWindow(QMainWindow):
         # Boutons du menu correction
         self.btn_correction = QPushButton("Correction", self)
         self.btn_correction.clicked.connect(self.ouvrir_correction)
-        self.btn_correction.setFixedSize(450, 30)  # Définir une taille fixe pour le bouton
+        self.btn_correction.setFixedSize(450, 30)  
         self.btn_correction.setStyleSheet("QPushButton"
                                           "{"
                                           "border-radius: 10px;"
@@ -56,7 +52,7 @@ class MainWindow(QMainWindow):
         # Boutons du menu raccourcis
         self.btn_raccourcis = QPushButton("Raccourcis", self)
         self.btn_raccourcis.clicked.connect(self.ouvrir_raccourcis)
-        self.btn_raccourcis.setFixedSize(450, 30)  # Définir une taille fixe pour le bouton
+        self.btn_raccourcis.setFixedSize(450, 30)  
         self.btn_raccourcis.setStyleSheet("QPushButton"
                                     "{"
                                     "border-radius: 10px;"
@@ -75,7 +71,7 @@ class MainWindow(QMainWindow):
         # Boutons du menu traduction
         self.btn_traduction = QPushButton("Traduction", self)
         self.btn_traduction.clicked.connect(self.ouvrir_traduction)
-        self.btn_traduction.setFixedSize(450, 30)  # Définir une taille fixe pour le bouton
+        self.btn_traduction.setFixedSize(450, 30)  
         self.btn_traduction.setStyleSheet("QPushButton"
                                     "{"
                                     "border-radius: 10px;"
@@ -91,7 +87,6 @@ class MainWindow(QMainWindow):
         self.btn_traduction.setGraphicsEffect(shadow) 
         self.layout.addWidget(self.btn_traduction, alignment=Qt.AlignCenter)
 
-        # Ajouter un étirement automatique en bas pour centrer les boutons
         self.centrer_fenetre()
 
     def keyPressEvent(self, event):
@@ -242,18 +237,36 @@ class CorrectionWindow(QWidget):
 
 
     def corriger_phrase(self):
-        phrase_a_corriger = self.text_edit_original.toPlainText()
-        if phrase_a_corriger:
-            # Implémentez votre logique pour corriger la phrase avec OpenAI ici
-            prompt = f"Corrigez les erreurs dans le texte suivant :\n\n{phrase_a_corriger}\n\nCorrection :"
-            response = openai.Completion.create(
-                engine="text-davinci-002",
-                prompt=prompt,
-                max_tokens=150
-            )
-            phrase_corrigee = response.choices[0].text.strip()
-            self.text_edit_corrige.clear()
-            self.text_edit_corrige.setPlainText(phrase_corrigee)
+        try:
+            phrase_a_corriger = self.text_edit_original.toPlainText()
+            if phrase_a_corriger:
+                prompt = f"Corrigez les erreurs dans le texte suivant :\n\n{phrase_a_corriger}\n\nCorrection :"
+                response = openai.Completion.create(
+                    engine="gpt-3.5-turbo",
+                    prompt=prompt,
+                    max_tokens=150
+                )
+                phrase_corrigee = response.choices[0].text.strip()
+                self.text_edit_corrige.clear()
+                self.text_edit_corrige.setPlainText(phrase_corrigee)
+        except openai.error.InvalidRequestError as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Erreur OpenAI API")
+            msg.setText("Une erreur est survenue avec l'API OpenAI.")
+            msg.setInformativeText(str(e))
+        except openai.error.RateLimitError as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Erreur OpenAI API")
+            msg.setText("Tu as dépassé le quota.")
+            msg.setInformativeText(str(e))
+        except openai.error.AuthenticationError as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Erreur OpenAI API")
+            msg.setText("Le token est mauvais.")
+            msg.setInformativeText(str(e))
+        msg.setIcon(QMessageBox.Information)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def copier_texte(self):
         texte_copier = self.text_edit_corrige.toPlainText()
@@ -279,8 +292,6 @@ class CorrectionWindow(QWidget):
         shadow.setColor(QColor("black"))
         shadow.setBlurRadius(15)
         self.btn_copier.setGraphicsEffect(shadow)
-
-
 
     def retour_menu(self):
         self.parent().setCentralWidget(MainWindow())
@@ -358,19 +369,13 @@ class RaccourcisWindow(QWidget):
         shadow.setColor(QColor("black"))
         shadow.setBlurRadius(15)
         self.btn_programme_personnalise.setGraphicsEffect(shadow)
-        # Charger le programme personnalisé enregistré
         self.settings = QSettings("VotreEntreprise", "VotreApplication")
         self.programme_personnalise = self.settings.value("programme_personnalise", "")
-        # Extraire le nom du fichier du chemin complet
         self.nom_programme_personnalise = self.settings.value("nom_programme_personnalise", "")
-        # Afficher le programme personnalisé sur le bouton
         self.btn_programme_personnalise.setText(self.nom_programme_personnalise)
-        # Créer un menu contextuel pour le bouton
         self.btn_programme_personnalise.setContextMenuPolicy(Qt.CustomContextMenu)
         self.btn_programme_personnalise.customContextMenuRequested.connect(self.afficher_menu_contextuel)
-        # Connecter le clic gauche pour ouvrir le programme
         self.btn_programme_personnalise.clicked.connect(self.ouvrir_programme_enregistre)
-        # Connecter le clic droit pour afficher le menu contextuel
         self.btn_programme_personnalise.customContextMenuRequested.connect(self.afficher_menu_contextuel)
         self.layout.addWidget(self.btn_programme_personnalise)
         self.setGeometry(0, 0, 600, 300) 
@@ -467,8 +472,6 @@ class RaccourcisWindow(QWidget):
     def ouvrir_fl(self):
         fichier_flp = r"C:\Users\augus\Desktop\config.flp"  # Remplacez par le chemin correct
         subprocess.run(["start", fichier_flp], shell=True)
-
-
 
     def retour_menu(self):
         self.parent().setCentralWidget(MainWindow())
@@ -585,16 +588,11 @@ class TraductionWindow(QWidget):
     def traduire_phrase(self):
         phrase_a_traduire = self.text_edit_source.toPlainText()
         if phrase_a_traduire:
-            # Utiliser soit l'API Google Translate, soit googletrans, pas les deux.
-            # Choisissez celle qui répond à vos besoins.
 
-            # Utiliser l'API Google Translate (googletrans)
             translator = Translator()
-            resultat_traduction = translator.translate(phrase_a_traduire, dest='en')  # Remplacez 'en' par la langue de destination souhaitée
+            resultat_traduction = translator.translate(phrase_a_traduire, dest='en')
             phrase_traduite = resultat_traduction.text
 
-            # OU utiliser googletrans
-            # phrase_traduite = Translator().translate(phrase_a_traduire).text
 
             self.text_edit_traduit.clear()
             self.text_edit_traduit.setPlainText(phrase_traduite)
